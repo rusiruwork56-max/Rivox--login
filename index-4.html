@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RIVOX — Google Login Setup</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#667085;--cyan:#00a9c7;--purple:#7157d9;--line:#e5eaf2;--good:#137a45;--bad:#b42318}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.wrap{max-width:760px;margin:auto;padding:22px}.brand{font-size:30px;font-weight:850;letter-spacing:.5px}.brand span{color:var(--cyan)}.by{color:var(--muted);font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;margin-top:18px;box-shadow:0 8px 28px #1720330a}h1{font-size:25px;margin:6px 0}p{color:var(--muted)}button{border:0;border-radius:12px;padding:13px 17px;font-weight:750;font-size:15px;cursor:pointer}.primary{background:linear-gradient(100deg,var(--cyan),#5b8df5);color:white}.secondary{background:#edf1f7;color:var(--ink)}button:disabled{opacity:.5;cursor:not-allowed}.status{padding:12px;border-radius:12px;background:#f1f4f9;color:#344054;margin-top:14px;overflow-wrap:anywhere}.status.good{background:#eaf8ef;color:var(--good)}.status.bad{background:#fff0ef;color:var(--bad)}.profile{display:none;gap:14px;align-items:center}.profile img{width:60px;height:60px;border-radius:50%;object-fit:cover}.hidden{display:none}.small{font-size:13px}.steps{padding-left:20px}.steps li{margin:8px 0}.config{font-family:ui-monospace,monospace;font-size:13px;white-space:pre-wrap;background:#f5f7fb;padding:12px;border-radius:10px;overflow-wrap:anywhere}a{color:#1769aa}footer{font-size:12px;color:var(--muted);padding:18px 4px}
+</style>
+<!-- Firebase compat SDK; authentication only starts after valid config is entered below. -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+</head><body><main class="wrap">
+<div class="brand">RI<span>VOX</span></div><div class="by">By RU Connection · Connect • Create • AI</div>
+<section class="card"><div class="small">ACCOUNT</div><h1>Welcome to RIVOX</h1><p>Sign in with Google to start your RIVOX account.</p>
+<button id="googleBtn" class="primary">Continue with Google</button> <button id="logoutBtn" class="secondary hidden">Sign out</button>
+<div id="status" class="status">Firebase config added. Host this page on an authorized HTTPS domain, then test Google sign-in.</div>
+<div id="profile" class="profile" style="margin-top:20px"><img id="photo" alt="Profile photo"><div><strong id="displayName"></strong><div id="email" class="small"></div><div class="small">Signed in with Google</div></div></div>
+</section>
+<section class="card"><h2>Finish Firebase connection</h2><ol class="steps"><li>In Firebase Console, open <b>Project settings → General → Your apps → RIVOX Web app</b>.</li><li>Choose <b>Config</b> under SDK setup. Copy the values for <code>apiKey</code>, <code>authDomain</code>, <code>projectId</code>, <code>appId</code> (and <code>messagingSenderId</code> if shown).</li><li>Open this HTML file in a text/code editor. Find <code>PASTE_YOUR_FIREBASE_CONFIG_HERE</code> and replace the placeholder object with your real <code>firebaseConfig</code> object.</li><li>Host the file on an authorized HTTPS domain (or test on localhost). In Firebase Authentication → Settings, add that domain to <b>Authorized domains</b> if it is not already listed.</li><li>Reload the hosted page and press <b>Continue with Google</b>.</li></ol>
+<div class="status">Safety: never put a service-account private key or any server secret in this HTML file. Firebase web config is client-side config; secure your data with Firebase Security Rules.</div>
+</section>
+<footer>RIVOX account UI starter. This page only implements Google authentication after you add the correct Firebase web config and host it on an authorized domain. It does not yet create a Firestore profile, chat, reels, or AI backend.</footer>
+</main>
+<script>
+const statusEl=document.getElementById('status'), googleBtn=document.getElementById('googleBtn'), logoutBtn=document.getElementById('logoutBtn'), profile=document.getElementById('profile');
+const firebaseConfig = {
+  apiKey: "AIzaSyAK4wCkbiBWflMgEu5XP6hOaLPXEwifWSo",
+  authDomain: "rivox-71da8.firebaseapp.com",
+  projectId: "rivox-71da8",
+  storageBucket: "rivox-71da8.firebasestorage.app",
+  messagingSenderId: "923259600022",
+  appId: "1:923259600022:web:8c0f024533ffdf3b7356b7",
+  measurementId: "G-KRT6CBQ7E3"
+};
+function status(message,kind=''){statusEl.textContent=message;statusEl.className='status '+kind;}
+function configReady(){return firebaseConfig && typeof firebaseConfig==='object' && firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId && !String(firebaseConfig.apiKey).includes('PASTE_');}
+if(!configReady()){googleBtn.disabled=true;status('Setup needed: add the real Firebase web config to this file, then host it on an authorized domain.','bad');}
+else {
+ try {
+  firebase.initializeApp(firebaseConfig);
+  const auth=firebase.auth();
+  googleBtn.disabled=false;
+  googleBtn.addEventListener('click',async()=>{try{status('Opening Google sign-in…');const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await auth.signInWithPopup(provider);}catch(e){if(e.code==='auth/popup-blocked'){try{await auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider());}catch(err){status(err.message,'bad')}}else{status((e.code?e.code+': ':'')+e.message,'bad')}}});
+  logoutBtn.addEventListener('click',()=>auth.signOut().catch(e=>status(e.message,'bad')));
+  auth.getRedirectResult().catch(e=>status(e.message,'bad'));
+  auth.onAuthStateChanged(user=>{if(user){profile.style.display='flex';document.getElementById('displayName').textContent=user.displayName||'RIVOX User';document.getElementById('email').textContent=user.email||'';const photo=document.getElementById('photo');photo.src=user.photoURL||'';photo.style.display=user.photoURL?'block':'none';googleBtn.classList.add('hidden');logoutBtn.classList.remove('hidden');status('Google sign-in successful. Your Firebase Authentication account is active.','good')}else{profile.style.display='none';googleBtn.classList.remove('hidden');logoutBtn.classList.add('hidden');status('Firebase connected. Tap Continue with Google to test sign-in.','good')}});
+ }catch(e){googleBtn.disabled=true;status('Firebase setup error: '+e.message,'bad')}
+}
+</script></body></html>
